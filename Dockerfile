@@ -5,14 +5,11 @@ FROM runpod/worker-comfyui:5.3.0-base
 USER root
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
-# 3. Set the working directory to where custom nodes should live.
+# 3. Set the working directory for custom nodes and copy our repository list.
 WORKDIR /comfyui/custom_nodes
-
-# 4. Copy our list of repositories into a temporary location.
 COPY git_clones.txt /tmp/git_clones.txt
 
-# 5. Read the file and clone each repository.
-#    This is now run as ROOT to ensure we have permission to create directories.
+# 4. Clone all repositories from our list as the root user.
 RUN while IFS=',' read -r repo_url commit_hash; do \
       repo_url=$(echo "$repo_url" | xargs); \
       commit_hash=$(echo "$commit_hash" | xargs); \
@@ -23,16 +20,22 @@ RUN while IFS=',' read -r repo_url commit_hash; do \
       fi; \
     done < /tmp/git_clones.txt
 
-# 6. Change ownership of all cloned files back to the default user.
+# 5. Change ownership of all cloned files back to the default user.
 RUN chown -R 1000:1000 /comfyui/custom_nodes
 
-# 7. Switch back to the standard, non-root user for all subsequent commands.
+# 6. Switch back to the standard, non-root user.
 USER 1000
 
-# 8. Install all Python dependencies found in the cloned repos.
-#    IMPORTANT: We explicitly use "/bin/bash -c" to ensure the correct shell is used.
+# 7. Copy our OWN pre-vetted dependency files into the image.
+COPY constraints.txt /opt/constraints.txt
+COPY git-requirements.txt /opt/git-requirements.txt
+
+# 8. Install dependencies using our controlled files, not the ones from the repos.
 RUN --mount=type=cache,target=/root/.cache/pip \
-    bash -c "pip install -r <(find . -name 'requirements.txt' -exec cat {} + | sort -u) --use-feature=fast-deps"
+    # Install git-based packages first from our clean git-requirements.txt
+    pip install --no-deps --no-build-isolation -r /opt/git-requirements.txt && \
+    # Install standard packages from our clean constraints.txt
+    pip install -r /opt/constraints.txt --use-feature=fast-deps
 
 # 9. Reset the working directory and set up the final startup script.
 WORKDIR /comfyui

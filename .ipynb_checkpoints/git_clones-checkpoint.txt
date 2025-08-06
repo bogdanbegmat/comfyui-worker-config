@@ -1,0 +1,16 @@
+https://github.com/cubiq/ComfyUI_IPAdapter_plus
+https://github.com/Fannovel16/comfyui_controlnet_aux
+https://github.com/ltdrdata/ComfyUI-Impact-Pack
+https://github.com/pythongosssss/ComfyUI-Custom-Scripts
+https://github.com/rgthree/rgthree-comfy
+https://github.com/cubiq/ComfyUI_essentials
+https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch
+https://github.com/TinyTerra/ComfyUI_tinyterraNodes
+https://github.com/ShmuelRonen/ComfyUI-Gemini_Flash_2.0_Exp
+https://github.com/sipherxyz/comfyui-art-venture
+https://github.com/Smirnov75/ComfyUI-mxToolkit
+https://github.com/ltdrdata/ComfyUI-Impact-Subpack
+https://github.com/jamesWalker55/comfyui-various
+https://github.com/ltdrdata/was-node-suite-comfyui
+https://github.com/bronkula/comfyui-fitsize
+https://github.com/crystian/ComfyUI-Crystools-save
