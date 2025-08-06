@@ -1,12 +1,16 @@
 # 1. Start from a SPECIFIC version of the official worker to ensure stability.
 FROM runpod/worker-comfyui:5.3.0-base
 
-# 2. Copy the pre-generated dependency list into the image.
+# 2. Copy BOTH requirements files into the image.
 COPY constraints.txt /opt/constraints.txt
+COPY git-requirements.txt /opt/git-requirements.txt
 
-# 3. Install the dependencies. This happens only ONCE during the image build.
+# 3. Install packages in two steps.
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-deps -r /opt/constraints.txt
+    # Step A: Install standard packages from PyPI.
+    pip install --no-deps -r /opt/constraints.txt && \
+    # Step B: Install git packages, preventing them from re-downloading torch.
+    pip install --no-deps --no-build-isolation -r /opt/git-requirements.txt
 
 # 4. Copy the lean startup script and make it executable.
 COPY startup.sh /usr/local/bin/startup.sh
