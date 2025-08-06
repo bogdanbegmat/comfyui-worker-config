@@ -1,30 +1,17 @@
-# ==============================================================================
-# Stage 1: The "Builder"
-# This stage does all the heavy lifting: cloning and installing.
-# ==============================================================================
-FROM runpod/worker-comfyui:5.3.0-base AS builder
+# 1. Start from the official base image.
+FROM runpod/worker-comfyui:5.3.0-base
 
-# Switch to ROOT for all installation tasks.
+# 2. Switch to ROOT user for all installation tasks.
 USER root
 
-# Install git.
+# 3. Install git.
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
-# Copy our clean, pre-vetted dependency lists.
-COPY constraints.txt /opt/constraints.txt
-COPY git-requirements.txt /opt/git-requirements.txt
-
-# Install all Python packages from our lists into the builder's venv.
-# This creates a fully populated Python environment that we can copy later.
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-deps --no-build-isolation -r /opt/git-requirements.txt && \
-    pip install -r /opt/constraints.txt --use-feature=fast-deps
-
-# Set the working directory for custom nodes and copy our repository list.
+# 4. Set the working directory for custom nodes and copy our repository list.
 WORKDIR /comfyui/custom_nodes
 COPY git_clones.txt /tmp/git_clones.txt
 
-# Clone all custom node repositories.
+# 5. Clone all repositories from our list.
 RUN while IFS=',' read -r repo_url commit_hash; do \
       repo_url=$(echo "$repo_url" | xargs); \
       commit_hash=$(echo "$commit_hash" | xargs); \
@@ -35,32 +22,26 @@ RUN while IFS=',' read -r repo_url commit_hash; do \
       fi; \
     done < /tmp/git_clones.txt
 
+# 6. Copy our pre-vetted dependency files.
+COPY constraints.txt /opt/constraints.txt
+COPY git-requirements.txt /opt/git-requirements.txt
 
-# ==============================================================================
-# Stage 2: The "Final" Image
-# This is the lean, clean image that will actually be deployed.
-# ==============================================================================
-FROM runpod/worker-comfyui:5.3.0-base
+# 7. Install all dependencies and immediately clean up the cache to save space.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-deps --no-build-isolation -r /opt/git-requirements.txt && \
+    pip install -r /opt/constraints.txt --use-feature=fast-deps && \
+    pip cache purge
 
-# As before, switch to root to perform system-level tasks.
-USER root
-
-# Copy the fully installed Python virtual environment from the builder stage.
-COPY --from=builder /opt/venv /opt/venv
-
-# Copy the fully cloned custom nodes directory from the builder stage.
-COPY --from=builder /comfyui/custom_nodes /comfyui/custom_nodes
-
-# Copy the startup script and set its permissions.
+# 8. Copy the startup script and set its permissions.
 COPY startup.sh /usr/local/bin/startup.sh
 RUN chmod +x /usr/local/bin/startup.sh
 
-# Change ownership of all our added files to the default user.
-RUN chown -R 1000:1000 /comfyui /opt/venv
+# 9. Change ownership of the custom nodes back to the default user.
+RUN chown -R 1000:1000 /comfyui/custom_nodes
 
-# Switch back to the standard, non-root user for the runtime environment.
+# 10. Switch back to the standard, non-root user for the final runtime environment.
 USER 1000
 
-# Final setup: Reset the working directory and point to the startup script.
+# 11. Final setup.
 WORKDIR /comfyui
 ENV STARTUP_SCRIPT="/usr/local/bin/startup.sh"
