@@ -70,7 +70,6 @@ typer
 typing-extensions
 ultralytics>=8.3.162
 uv
-was-node-suite-comfyui
 xformers
 yacs
 yapf
