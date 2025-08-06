@@ -13,4 +13,4 @@ https://github.com/ltdrdata/ComfyUI-Impact-Subpack
 https://github.com/jamesWalker55/comfyui-various
 https://github.com/ltdrdata/was-node-suite-comfyui
 https://github.com/bronkula/comfyui-fitsize
-https://github.com/crystian/ComfyUI-Crystools-save
+https://github.com/crystian/ComfyUI-Crystools
